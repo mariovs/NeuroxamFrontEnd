@@ -76,6 +76,7 @@ export default {
     data.examId = this.$route.params.examId;
     data.diagnostic = null
     data.examName = this.$route.params.examName;
+    data.questions = [];
     console.log("exam id is : " +  data.examId)
     if (data.examId == 0 || data.examId == "") {
       console.log("error exam id is missing");

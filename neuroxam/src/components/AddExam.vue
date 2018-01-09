@@ -51,13 +51,13 @@
     </div>
   </div>
   <div class="row">
-      <!-- <tree-menu :questionName="data.tree.answers.questionName" :answers="data.tree.answers" :diagnostic="data.tree.answers.diagnostic" :depth="data.depth"></tree-menu> -->
-
-      <ul id="demo">
+      <ul id="demo" v-if="data.showQuestion">
         <add-question-tree
-          :model="data.questionData">
+          :model="data.questionData"
+          :examid="data.exam.idExam">
         </add-question-tree>
       </ul>
+      <!-- <a class="btn" v-on:click="getFirsQuestion">Get First Question</a> -->
   </div>
 
   <md-snackbar class="teal" :md-duration="data.duration" :md-active.sync="data.showSnackbar" md-persistent>
@@ -68,6 +68,7 @@
 
 <script>
 import axios from "axios"
+import Vue from "vue"
 import VueMaterial from 'vue-material'
 import AddQuestion from './AddQuestion.vue'
 import TreeMenu from './TreeMenu.vue'
@@ -84,6 +85,7 @@ var data = {
   categoryId: 0,
   questionName: "",
   displayQForm: false,
+  showQuestion: false,
   exam: null,
   tree: {
     answers:[
@@ -138,11 +140,7 @@ var data = {
       }
     ]
   },
-  questionData: {
-
-  }
-  
-
+  questionData: {}
   }
 export default {
     name: "AddExam",
@@ -172,14 +170,37 @@ export default {
         console.log("data question id : " + JSON.stringify(data.questionData))
         if(data.exam != null)
         {
+          
           axios.get("http://localhost:5000/api/questions/getFirstQuestionOfExam", {
             params: {
               examId: data.exam.idExam
             }
           }).then(response => {
             console.log("response for firs question is " + JSON.stringify(response.data))
-               data.questionData.name = response.data.questionName
-               data.questionData.children = []
+               this.data.questionData.name = response.data.questionName;
+               
+                var answerListFromServer = response.data.answerList;
+                var arrayLength = answerListFromServer.length;
+                if(arrayLength > 0)
+                {
+                    Vue.set(this.data.questionData, 'children', [])
+                }
+                for (var i = 0; i < arrayLength; i++) {
+                      var answerObj = {
+                        name: answerListFromServer[i].name,
+                        answerId: answerListFromServer[i].idAnswer,
+                        showQ: false,
+                        showD: false,
+                        questionDescriptionModel: "",
+                        diagnosticDescriptionModel: "",
+                        children: []
+                      }
+                      this.data.questionData.children.push({
+                        answer: answerObj
+                      })
+                }
+               this.data.questionData.questionId = response.data.idQuestion;
+               this.data.showQuestion = true
                console.log("questionData is " + JSON.stringify(data.questionData))
           })
       }
@@ -210,6 +231,7 @@ export default {
               data.showSnackbar = true
               data.snackbarMsg = "Examen '" + data.name + "' adaugat"
               data.exam = response.data
+
               console.log("respone is ok")
               console.log(response)
             })
@@ -235,6 +257,26 @@ export default {
                 data.questionData.name = response.data.questionName                    
                 console.log("questionData is " + JSON.stringify(data.questionData))
              })
+        },
+        getFirsQuestion: function(){
+
+          Vue.set(this.data.questionData, 'children', [])
+          this.data.questionData.children.push({
+            name: 'new stuff'
+          })
+          
+
+          axios.get("http://localhost:5000/api/questions/getFirstQuestionOfExam", {
+            params: {
+              examId: data.exam.idExam
+            }
+          }).then(response => {
+            console.log("response for firs question is " + JSON.stringify(response.data))
+   
+                this.data.questionData.name = response.data.questionName;
+                this.data.showQuestion = true
+               console.log("questionData is " + JSON.stringify(data.questionData))
+          })
         },
         displayQuestionForm: function(){
           data.displayQForm = true
